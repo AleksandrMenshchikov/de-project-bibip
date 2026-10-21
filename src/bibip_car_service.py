@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Final, TypeVar
 
 from pydantic import BaseModel
-from sortedcontainers import SortedKeyList
 
 from models import Car, CarFullInfo, CarStatus, Model, ModelSaleStats, Sale
 
@@ -114,7 +113,7 @@ class CarService:
         data = self.__get_all_data(path_index)
         data.append(entity_index)
 
-        sorted_list = SortedKeyList(data, key=lambda x: x.split(',')[0])
+        sorted_list = sorted(data, key=lambda x: x.split(',')[0])
 
         with open(path_index, 'w', encoding='utf-8') as f:
             for line in sorted_list:
@@ -134,7 +133,7 @@ class CarService:
         data: list[str] = [f'{new_index},{e.split(",")[1]}' if e.split(',')[0] == index
                            else e for e in self.__get_all_data(path_index)]
 
-        sorted_list = SortedKeyList(data, key=lambda x: x.split(',')[0])
+        sorted_list = sorted(data, key=lambda x: x.split(',')[0])
 
         with open(path_index, 'w', encoding='utf-8') as f:
             for line in sorted_list:
@@ -379,7 +378,7 @@ class CarService:
     # Задание 7. Самые продаваемые модели
     def top_models_by_sales(self) -> list[ModelSaleStats]:
         data = self.__get_all_data(self.sales_path)
-        obj: dict[str, list[int | Decimal]] = {}
+        obj: dict[str, tuple[int, Decimal]] = {}
 
         for elem in data:
             sale = Sale.model_validate_json(elem)
@@ -402,11 +401,11 @@ class CarService:
                 continue
 
             if model_entity.data in obj:
-                obj[model_entity.data] = [obj[model_entity.data][0] + 1, obj[model_entity.data][1] + sale.cost]
+                obj[model_entity.data] = (obj[model_entity.data][0] + 1, obj[model_entity.data][1] + sale.cost)
             else:
-                obj[model_entity.data] = [1, sale.cost]
+                obj[model_entity.data] = (1, sale.cost)
 
-        sorted_list = SortedKeyList(obj.items(), key=lambda item: (-item[1][0], -item[1][1]))
+        sorted_list = sorted(obj.items(), key=lambda item: (-item[1][0], -item[1][1]))
         top_3 = sorted_list[:3]
 
         result = []
